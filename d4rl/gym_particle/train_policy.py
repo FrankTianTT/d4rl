@@ -69,7 +69,10 @@ def draw():
 
 def collect_offline_data(num=int(2e5), policy="random"):
     env = TimeLimit(ParticleEnv(), 300)
+    episode_rewards = []
+
     t = 0
+    episode_reward = 0
     obs = env.reset()
     samples = defaultdict(list)
     model = SAC.load("save/best_model.zip")
@@ -80,6 +83,7 @@ def collect_offline_data(num=int(2e5), policy="random"):
             action, state = model.predict(obs, deterministic=True)
 
         next_obs, reward, done, _ = env.step(action)
+        episode_reward += reward
 
         samples['observations'].append(obs)
         samples['actions'].append(action)
@@ -89,6 +93,8 @@ def collect_offline_data(num=int(2e5), policy="random"):
 
         if done:
             obs = env.reset()
+            episode_rewards.append(episode_reward)
+            episode_reward = 0
         else:
             obs = next_obs
 
@@ -98,7 +104,7 @@ def collect_offline_data(num=int(2e5), policy="random"):
     for key in samples.keys():
         np_samples[key] = np.array(samples[key])
 
-    return np_samples
+    return np_samples, min(episode_rewards), max(episode_rewards)
 
 
 def save_as_h5(dataset, h5file_path):
@@ -113,9 +119,11 @@ if __name__ == "__main__":
     replay_samples = train()
     save_as_h5(replay_samples, "samples/particle-medium-replay-v0.hdf5")
 
-    random_samples = collect_offline_data(int(2e5), policy="random")
+    random_samples, random_min, random_max = collect_offline_data(int(2e5), policy="random")
+    print(random_min, random_max)
     save_as_h5(random_samples, "samples/particle-random-v0.hdf5")
 
-    medium_samples = collect_offline_data(int(2e5), policy="medium")
+    medium_samples, medium_min, medium_max = collect_offline_data(int(2e5), policy="medium")
+    print(medium_min, medium_max)
     save_as_h5(medium_samples, "samples/particle-medium-v0.hdf5")
 

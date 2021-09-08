@@ -9,15 +9,15 @@ DATASET_URLS = {
 
 }
 
-REF_MIN_SCORE = {'particle-random-v0': 0,
-                 'particle-medium-v0': 0,
+REF_MIN_SCORE = {'particle-random-v0': -118.13,
+                 'particle-medium-v0': 112.88,
                  'particle-medium-replay-v0': -13.5}
-REF_MAX_SCORE = {'particle-random-v0': 0,
-                 'particle-medium-v0': 0,
+REF_MAX_SCORE = {'particle-random-v0': 176.20,
+                 'particle-medium-v0': 203.37,
                  'particle-medium-replay-v0': 161.4}
 
 
-for dataset in ['random', 'medium', 'expert', 'medium-expert', 'medium-replay', 'full-replay']:
+for dataset in ['random', 'medium', 'medium-replay']:
     env_name = "particle-{}-v0".format(dataset)
     register(
         id=env_name,
