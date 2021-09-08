@@ -33,12 +33,11 @@ def train():
 def collect_offline_data_from_model(model):
     replay_buffer = model.replay_buffer
     pos = replay_buffer.pos
-    samples = {}
-    samples['observations'] = replay_buffer.observations[:pos].reshape(pos, -1)
-    samples['actions'] = replay_buffer.actions[:pos].reshape(pos, -1)
-    samples['rewards'] = replay_buffer.rewards[:pos].reshape(pos)
-    samples['terminals'] = replay_buffer.dones[:pos].reshape(pos)
-    samples['timeouts'] = replay_buffer.timeouts[:pos].reshape(pos)
+    samples = {'observations': replay_buffer.observations[:pos].reshape(pos, -1),
+               'actions': replay_buffer.actions[:pos].reshape(pos, -1),
+               'rewards': replay_buffer.rewards[:pos].reshape(pos),
+               'terminals': replay_buffer.dones[:pos].reshape(pos),
+               'timeouts': replay_buffer.timeouts[:pos].reshape(pos)}
 
     return samples
 
@@ -100,17 +99,6 @@ def collect_offline_data(num=int(2e5), policy="random"):
         np_samples[key] = np.array(samples[key])
 
     return np_samples
-
-
-def get_keys(h5file):
-    keys = []
-
-    def visitor(name, item):
-        if isinstance(item, h5py.Dataset):
-            keys.append(name)
-
-    h5file.visititems(visitor)
-    return keys
 
 
 def save_as_h5(dataset, h5file_path):

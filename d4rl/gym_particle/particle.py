@@ -93,12 +93,15 @@ class ParticleEnv(Env):
 
 
 class OfflineParticleEnv(ParticleEnv, offline_env.OfflineEnv):
-    def __init__(self,
-                 init=(0, 0), goal=(100, 100), return_direction=True, return_velocity=True, region=1e3,
-                 **kwargs):
-        ParticleEnv.__init__(self, init, goal, return_direction, return_velocity, region)
+    def __init__(self, **kwargs):
+        ParticleEnv.__init__(self)
         offline_env.OfflineEnv.__init__(self, **kwargs)
 
 
+def get_particle_env(**kwargs):
+    return OfflineParticleEnv(**kwargs)
+
+
 if __name__ == "__main__":
-    pass
+    env = get_particle_env()
+    env.get_dataset()
