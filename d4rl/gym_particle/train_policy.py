@@ -14,10 +14,12 @@ from collections import defaultdict
 import h5py
 from tqdm import tqdm
 
+max_episode_steps = 300
 
-def train():
-    eval_env = TimeLimit(ParticleEnv(), 300)
-    env = TimeLimit(ParticleEnv(), 300)
+
+def train(total_timesteps=int(2e5)):
+    eval_env = TimeLimit(ParticleEnv(), max_episode_steps)
+    env = TimeLimit(ParticleEnv(), max_episode_steps)
 
     eval_callback = EvalCallback(eval_env, best_model_save_path="save",
                                  log_path="save", eval_freq=int(5e3),
@@ -26,7 +28,7 @@ def train():
     model = SAC('MlpPolicy', env, tensorboard_log="./log",
                 batch_size=256)
 
-    model.learn(int(1e5), callback=eval_callback)
+    model.learn(total_timesteps, callback=eval_callback)
     return collect_offline_data_from_model(model)
 
 
@@ -43,7 +45,7 @@ def collect_offline_data_from_model(model):
 
 
 def draw():
-    env = TimeLimit(ParticleEnv(), 300)
+    env = TimeLimit(ParticleEnv(), max_episode_steps)
     model = SAC.load("save/best_model.zip")
 
     rewards = 0
@@ -68,7 +70,7 @@ def draw():
 
 
 def collect_offline_data(num=int(2e5), policy="random"):
-    env = TimeLimit(ParticleEnv(), 300)
+    env = TimeLimit(ParticleEnv(), max_episode_steps)
     episode_rewards = []
 
     t = 0
@@ -116,14 +118,13 @@ def save_as_h5(dataset, h5file_path):
 if __name__ == "__main__":
     os.makedirs("samples", exist_ok=True)
 
-    replay_samples = train()
+    replay_samples = train(int(2e5))
     save_as_h5(replay_samples, "samples/particle-medium-replay-v0.hdf5")
 
-    random_samples, random_min, random_max = collect_offline_data(int(2e5), policy="random")
-    print(random_min, random_max)
-    save_as_h5(random_samples, "samples/particle-random-v0.hdf5")
+    # random_samples, random_min, random_max = collect_offline_data(int(2e5), policy="random")
+    # print(random_min, random_max)
+    # save_as_h5(random_samples, "samples/particle-random-v0.hdf5")
 
     medium_samples, medium_min, medium_max = collect_offline_data(int(2e5), policy="medium")
     print(medium_min, medium_max)
     save_as_h5(medium_samples, "samples/particle-medium-v0.hdf5")
-

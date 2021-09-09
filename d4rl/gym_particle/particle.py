@@ -59,7 +59,7 @@ class ParticleEnv(Env):
         self.observation_space = Box(np.array(state_low), np.array(state_high))
 
     def step(self, action):
-        action = tanh(action[0], alpha=math.pi / 6)
+        action = tanh(action[0], alpha=math.pi / 18)
         self.direction = (self.direction + action) % (2 * math.pi)
 
         state = self._get_state()
@@ -76,8 +76,10 @@ class ParticleEnv(Env):
         print("x:{:.2f}\ty:{:.2f}".format(*self.position))
 
     def _get_state(self):
-        self.v = sigmoid(calculate_distance(self.position, self.init), t=5)
         vx, vy = self.v * math.cos(self.direction), self.v * math.sin(self.direction)
+
+        self.v = sigmoid(calculate_distance(self.position, self.init), t=5)
+
         self.position[0] += vx
         self.position[1] += vy
 
