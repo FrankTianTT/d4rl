@@ -19,6 +19,7 @@ def draw(policy):
     while True:
         x.append(obs[-2])
         y.append(obs[-1])
+        print(env.v)
 
         action = policy(obs)
         obs, reward, done, _ = env.step(action)
@@ -47,4 +48,4 @@ def expert_policy(obs):
 
 
 if __name__ == '__main__':
-    draw(random_policy)
+    draw(sac_policy)

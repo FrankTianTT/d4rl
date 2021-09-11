@@ -10,14 +10,14 @@ import torch as th
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle as pkl
-from collections import defaultdict
+from collections import defaultdict, Counter
 import h5py
 from tqdm import tqdm
 
 max_episode_steps = 300
 
 
-def train(total_timesteps=int(2e5)):
+def train(total_timesteps=int(5e4)):
     eval_env = TimeLimit(ParticleEnv(), max_episode_steps)
     env = TimeLimit(ParticleEnv(), max_episode_steps)
 
@@ -34,9 +34,11 @@ def train(total_timesteps=int(2e5)):
 
 def collect_offline_data_from_model(model):
     replay_buffer = model.replay_buffer
+    unscale_action = model.policy.unscale_action
     pos = replay_buffer.pos
+    # SAC of sb3 will scale action automatically, so un-scale it manually.
     samples = {'observations': replay_buffer.observations[:pos].reshape(pos, -1),
-               'actions': replay_buffer.actions[:pos].reshape(pos, -1),
+               'actions': unscale_action(replay_buffer.actions[:pos].reshape(pos, -1)),
                'rewards': replay_buffer.rewards[:pos].reshape(pos),
                'terminals': replay_buffer.dones[:pos].reshape(pos),
                'timeouts': replay_buffer.timeouts[:pos].reshape(pos)}
@@ -73,6 +75,8 @@ def collect_offline_data(num=int(2e5), policy="random"):
     env = TimeLimit(ParticleEnv(), max_episode_steps)
     episode_rewards = []
 
+    v_list = []
+
     t = 0
     episode_reward = 0
     obs = env.reset()
@@ -84,6 +88,7 @@ def collect_offline_data(num=int(2e5), policy="random"):
         else:
             action, state = model.predict(obs, deterministic=True)
 
+        v_list.append(env.v)
         next_obs, reward, done, _ = env.step(action)
         episode_reward += reward
 
@@ -106,6 +111,8 @@ def collect_offline_data(num=int(2e5), policy="random"):
     for key in samples.keys():
         np_samples[key] = np.array(samples[key])
 
+    print(Counter(v_list))
+
     return np_samples, min(episode_rewards), max(episode_rewards)
 
 
@@ -118,13 +125,15 @@ def save_as_h5(dataset, h5file_path):
 if __name__ == "__main__":
     os.makedirs("samples", exist_ok=True)
 
-    replay_samples = train(int(2e5))
-    save_as_h5(replay_samples, "samples/particle-medium-replay-v0.hdf5")
-
     # random_samples, random_min, random_max = collect_offline_data(int(2e5), policy="random")
     # print(random_min, random_max)
     # save_as_h5(random_samples, "samples/particle-random-v0.hdf5")
 
+    replay_samples = train(int(1e5))
+    save_as_h5(replay_samples, "samples/particle-medium-replay-v0.hdf5")
+
     medium_samples, medium_min, medium_max = collect_offline_data(int(2e5), policy="medium")
     print(medium_min, medium_max)
     save_as_h5(medium_samples, "samples/particle-medium-v0.hdf5")
+
+
