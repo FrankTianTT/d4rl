@@ -46,30 +46,6 @@ def collect_offline_data_from_model(model):
     return samples
 
 
-def draw():
-    env = TimeLimit(ParticleEnv(), max_episode_steps)
-    model = SAC.load("save/best_model.zip")
-
-    rewards = 0
-
-    x = []
-    y = []
-    obs = env.reset()
-    while True:
-        x.append(obs[-2])
-        y.append(obs[-1])
-
-        action, state = model.predict(obs, deterministic=True)
-        obs, reward, done, _ = env.step(action)
-        rewards += reward
-
-        if done:
-            break
-    plt.plot(x, y)
-    plt.show()
-
-    print(rewards)
-
 
 def collect_offline_data(num=int(2e5), policy="random"):
     env = TimeLimit(ParticleEnv(), max_episode_steps)
@@ -115,6 +91,29 @@ def collect_offline_data(num=int(2e5), policy="random"):
 
     return np_samples, min(episode_rewards), max(episode_rewards)
 
+def draw(max_episode_steps=300):
+    env = TimeLimit(ParticleEnv(), max_episode_steps)
+
+    model = SAC.load("save/best_model.zip")
+    rewards = 0
+
+    x = []
+    y = []
+    obs = env.reset()
+    while True:
+        x.append(obs[-2])
+        y.append(obs[-1])
+
+        action, state = model.predict(obs, deterministic=True)
+        obs, reward, done, _ = env.step(action)
+        rewards += reward
+
+        if done:
+            break
+    plt.plot(x, y)
+    plt.show()
+
+    print(rewards)
 
 def save_as_h5(dataset, h5file_path):
     with h5py.File(h5file_path, 'w') as dataset_file:
@@ -123,17 +122,14 @@ def save_as_h5(dataset, h5file_path):
 
 
 if __name__ == "__main__":
-    os.makedirs("samples", exist_ok=True)
-
-    # random_samples, random_min, random_max = collect_offline_data(int(2e5), policy="random")
-    # print(random_min, random_max)
+    # os.makedirs("samples", exist_ok=True)
+    #
+    # replay_samples = train(int(2e5))
+    # save_as_h5(replay_samples, "samples/particle-medium-replay-v0.hdf5")
+    #
+    # random_samples, random_min, random_max = collect_offline_data(int(1e6), policy="random")
     # save_as_h5(random_samples, "samples/particle-random-v0.hdf5")
-
-    replay_samples = train(int(1e5))
-    save_as_h5(replay_samples, "samples/particle-medium-replay-v0.hdf5")
-
-    medium_samples, medium_min, medium_max = collect_offline_data(int(2e5), policy="medium")
-    print(medium_min, medium_max)
-    save_as_h5(medium_samples, "samples/particle-medium-v0.hdf5")
-
-
+    #
+    # medium_samples, medium_min, medium_max = collect_offline_data(int(1e6), policy="medium")
+    # save_as_h5(medium_samples, "samples/particle-medium-v0.hdf5")
+    draw()

@@ -7,8 +7,8 @@ DATASET_URLS = {
     'particle-medium-replay-v0': 'http://114.212.21.162:6868/offline_dataset/particle-medium-replay-v0.hdf5'
 }
 
-sac_min = -227.8
-sac_max = 237.8
+sac_min = -160.7
+sac_max = 261.5
 
 for dataset in ['random', 'medium', 'medium-replay']:
     env_name = "particle-{}-v0".format(dataset)
