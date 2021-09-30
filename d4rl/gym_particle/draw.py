@@ -3,7 +3,8 @@ from particle import ParticleEnv
 from gym.wrappers import TimeLimit
 import matplotlib.pyplot as plt
 import numpy as np
-
+import math
+from d4rl.gym_particle.util import *
 
 max_episode_steps = 100
 model = SAC.load("logs/best_model/best_model.zip")
@@ -19,10 +20,10 @@ def draw(policy):
     while True:
         x.append(obs[-2])
         y.append(obs[-1])
-        print(env.v)
 
         action = policy(obs)
         obs, reward, done, _ = env.step(action)
+        print(reward)
         rewards += reward
 
         if done:
@@ -44,8 +45,15 @@ def random_policy(obs):
 
 
 def expert_policy(obs):
-    return
+    direction, v, vx, vy, px, py = obs
+    goal_direction = math.atan((100 - py) / (100 - px))
+    if px > 100 and py > 100:
+        goal_direction += math.pi
+    angle = goal_direction - direction
+    action = artanh(angle, t=100, alpha=math.pi)
+    return [action]
 
 
 if __name__ == '__main__':
+    # draw(expert_policy)
     draw(sac_policy)

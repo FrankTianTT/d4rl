@@ -30,7 +30,7 @@ def train(total_timesteps=int(5e4)):
     model = SAC('MlpPolicy', env, tensorboard_log="./log",
                 batch_size=max_episode_steps)
 
-    # model.learn(total_timesteps, callback=callback)
+    model.learn(total_timesteps, callback=callback)
     # return collect_offline_data_from_model(model)
 
 
@@ -134,12 +134,12 @@ def save_as_h5(dataset, h5file_path):
 if __name__ == "__main__":
     os.makedirs("samples", exist_ok=True)
 
-    # train(int(2e4))
-    # replay_samples, replay_min, replay_max = collect_multi_offline_data(int(2e5), policy_path_dir="./logs")
-    # save_as_h5(replay_samples, "samples/particle-medium-replay-v0.hdf5")
-    #
-    # random_samples, random_min, random_max = collect_offline_data(int(1e6))
-    # save_as_h5(random_samples, "samples/particle-random-v0.hdf5")
+    train(int(1e4))
+    replay_samples, replay_min, replay_max = collect_multi_offline_data(int(2e5), policy_path_dir="./logs")
+    save_as_h5(replay_samples, "samples/particle-medium-replay-v0.hdf5")
+
+    random_samples, random_min, random_max = collect_offline_data(int(1e6))
+    save_as_h5(random_samples, "samples/particle-random-v0.hdf5")
 
     medium_samples, medium_min, medium_max = collect_offline_data(int(1e6), policy_path='./logs/best_model/best_model.zip')
     save_as_h5(medium_samples, "samples/particle-medium-v0.hdf5")
