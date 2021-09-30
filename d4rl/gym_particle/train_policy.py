@@ -14,22 +14,24 @@ from collections import defaultdict, Counter
 import h5py
 from tqdm import tqdm
 
-max_episode_steps = 300
+max_episode_steps = 100
 
 
 def train(total_timesteps=int(5e4)):
     eval_env = TimeLimit(ParticleEnv(), max_episode_steps)
     env = TimeLimit(ParticleEnv(), max_episode_steps)
 
-    eval_callback = EvalCallback(eval_env, best_model_save_path="save",
-                                 log_path="save", eval_freq=int(5e3),
-                                 deterministic=True, render=True)
+    eval_callback = EvalCallback(eval_env, best_model_save_path='./logs/best_model',
+                                 log_path='./logs/results', eval_freq=max_episode_steps)
+
+    checkpoint_callback = CheckpointCallback(save_freq=max_episode_steps, save_path='./logs/')
+    callback = CallbackList([checkpoint_callback, eval_callback])
 
     model = SAC('MlpPolicy', env, tensorboard_log="./log",
-                batch_size=256)
+                batch_size=max_episode_steps)
 
-    model.learn(total_timesteps, callback=eval_callback)
-    return collect_offline_data_from_model(model)
+    # model.learn(total_timesteps, callback=callback)
+    # return collect_offline_data_from_model(model)
 
 
 def collect_offline_data_from_model(model):
@@ -46,25 +48,24 @@ def collect_offline_data_from_model(model):
     return samples
 
 
-
-def collect_offline_data(num=int(2e5), policy="random"):
+def collect_offline_data(num=int(2e5), policy_path=None):
     env = TimeLimit(ParticleEnv(), max_episode_steps)
     episode_rewards = []
-
-    v_list = []
 
     t = 0
     episode_reward = 0
     obs = env.reset()
     samples = defaultdict(list)
-    model = SAC.load("save/best_model.zip")
+    model = None
+    if policy_path is not None:
+        model = SAC.load(policy_path)
+
     while t < num:
-        if policy == "random":
+        if model is None:
             action = env.action_space.sample()
         else:
             action, state = model.predict(obs, deterministic=True)
 
-        v_list.append(env.v)
         next_obs, reward, done, _ = env.step(action)
         episode_reward += reward
 
@@ -87,49 +88,58 @@ def collect_offline_data(num=int(2e5), policy="random"):
     for key in samples.keys():
         np_samples[key] = np.array(samples[key])
 
-    print(Counter(v_list))
+    return np_samples, min(episode_rewards), max(episode_rewards)
+
+
+def collect_multi_offline_data(num=int(2e5), policy_path_dir=None):
+    policy_paths = os.listdir(policy_path_dir)
+    policy_paths = list(filter(lambda x: x.endswith("zip"), policy_paths))
+    num_pre_policy = int((num / len(policy_paths) / max_episode_steps) + 1) * max_episode_steps
+
+    episode_rewards = []
+    samples = defaultdict(list)
+    for policy_name in tqdm(policy_paths):
+        path = os.path.join(policy_path_dir, policy_name)
+        policy_samples, policy_min, policy_max = collect_offline_data(num_pre_policy, path)
+        episode_rewards.extend([policy_min, policy_max])
+        for key in policy_samples.keys():
+            samples[key].append(policy_samples[key])
+
+    np_samples = {}
+    for key in samples.keys():
+        np_samples[key] = np.concatenate(samples[key])
 
     return np_samples, min(episode_rewards), max(episode_rewards)
 
-def draw(max_episode_steps=300):
-    env = TimeLimit(ParticleEnv(), max_episode_steps)
-
-    model = SAC.load("save/best_model.zip")
-    rewards = 0
-
-    x = []
-    y = []
-    obs = env.reset()
-    while True:
-        x.append(obs[-2])
-        y.append(obs[-1])
-
-        action, state = model.predict(obs, deterministic=True)
-        obs, reward, done, _ = env.step(action)
-        rewards += reward
-
-        if done:
-            break
-    plt.plot(x, y)
-    plt.show()
-
-    print(rewards)
 
 def save_as_h5(dataset, h5file_path):
     with h5py.File(h5file_path, 'w') as dataset_file:
         for key in dataset.keys():
             dataset_file[key] = dataset[key]
 
+#
+# def visualize_data(sample_path):
+#     import pandas as pd
+#     from pandas_profiling import ProfileReport
+#     obs_dim, act_dim, inputs, outputs = load_env(env_name, use_diff_predict=False, normalize=False)
+#     df = pd.DataFrame(np.concatenate([inputs, outputs], axis=1))
+#     columns = ["s_t_{}".format(i + 1) for i in range(inputs.shape[1] - 1)] + ["action", "reward"] + \
+#               ["s_t'_{}".format(i + 1) for i in range(inputs.shape[1] - 1)]
+#     df.columns = columns
+#
+#     profile = ProfileReport(df, title="{} Report".format(env_name))
+#     profile.to_file("{}_report.html".format(env_name))
+
 
 if __name__ == "__main__":
-    # os.makedirs("samples", exist_ok=True)
-    #
-    # replay_samples = train(int(2e5))
+    os.makedirs("samples", exist_ok=True)
+
+    # train(int(2e4))
+    # replay_samples, replay_min, replay_max = collect_multi_offline_data(int(2e5), policy_path_dir="./logs")
     # save_as_h5(replay_samples, "samples/particle-medium-replay-v0.hdf5")
     #
-    # random_samples, random_min, random_max = collect_offline_data(int(1e6), policy="random")
+    # random_samples, random_min, random_max = collect_offline_data(int(1e6))
     # save_as_h5(random_samples, "samples/particle-random-v0.hdf5")
-    #
-    # medium_samples, medium_min, medium_max = collect_offline_data(int(1e6), policy="medium")
-    # save_as_h5(medium_samples, "samples/particle-medium-v0.hdf5")
-    draw()
+
+    medium_samples, medium_min, medium_max = collect_offline_data(int(1e6), policy_path='./logs/best_model/best_model.zip')
+    save_as_h5(medium_samples, "samples/particle-medium-v0.hdf5")

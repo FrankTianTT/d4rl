@@ -38,18 +38,18 @@ class ParticleEnv(Env):
                  init=(0, 0),
                  goal=(100, 100),
                  region=1e3,
-                 v_dist_boundary=35,
+                 v_dist_boundary=30,
                  v_max=4,
                  return_direction=True,
                  return_velocity=True):
-        self.goal = goal
         self.init = init
+        self.goal = goal
         self.region = region
         self.v_dist_boundary = v_dist_boundary
         self.v_max = v_max
+
         self.position = list(self.init)
         self.direction = 0
-
         self.v = 0.5
         self.vx = 0
         self.vy = 0
@@ -134,8 +134,8 @@ class OfflineParticleEnv(ParticleEnv, offline_env.OfflineEnv):
         offline_env.OfflineEnv.__init__(self, **kwargs)
 
 
-def find_v_dist_boundary(num=int(2e5), max_episode_steps=300):
-    v_dist_boundary = 40
+def find_v_dist_boundary(num=int(2e5), max_episode_steps=100):
+    v_dist_boundary = 30
     env = TimeLimit(ParticleEnv(v_dist_boundary=v_dist_boundary), max_episode_steps)
     episode_rewards = []
 

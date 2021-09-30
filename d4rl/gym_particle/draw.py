@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-max_episode_steps = 300
-model = SAC.load("save/best_model.zip")
+max_episode_steps = 100
+model = SAC.load("logs/best_model/best_model.zip")
 
 
 def draw(policy):
