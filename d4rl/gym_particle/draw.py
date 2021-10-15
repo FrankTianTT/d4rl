@@ -7,7 +7,7 @@ import math
 from d4rl.gym_particle.util import *
 
 max_episode_steps = 100
-model = SAC.load("logs/best_model/best_model.zip")
+model = SAC.load("logs/rl_model_40000_steps.zip")
 
 
 def draw(policy):

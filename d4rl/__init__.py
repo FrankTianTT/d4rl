@@ -50,13 +50,7 @@ except ImportError as e:
         print(_ERROR_MESSAGE % 'GymBullet', file=sys.stderr)
         print(e, file=sys.stderr)
 
-try:
-    import d4rl.gym_particle
-except ImportError as e:
-    if not SUPPRESS_MESSAGES:
-        print(_ERROR_MESSAGE % 'GymParticle', file=sys.stderr)
-        print(e, file=sys.stderr)
-
+import d4rl.gym_particle
 
 def reverse_normalized_score(env_name, score):
     ref_min_score = d4rl.infos.REF_MIN_SCORE[env_name]

@@ -4,7 +4,7 @@ import torch
 import stable_baselines3
 from stable_baselines3.common.callbacks import CallbackList, CheckpointCallback, EvalCallback
 from stable_baselines3 import SAC
-from particle import ParticleEnv
+from particle import ParticleEnv, get_particle_env
 from gym.wrappers import TimeLimit
 import torch as th
 import numpy as np
@@ -91,9 +91,11 @@ def collect_offline_data(num=int(2e5), policy_path=None):
     return np_samples, min(episode_rewards), max(episode_rewards)
 
 
-def collect_multi_offline_data(num=int(2e5), policy_path_dir=None):
+def collect_multi_offline_data(num=int(2e5), policy_path_dir=None, end_policy_epoch=40000):
     policy_paths = os.listdir(policy_path_dir)
-    policy_paths = list(filter(lambda x: x.endswith("zip"), policy_paths))
+    policy_paths = filter(lambda x: x.endswith("zip"), policy_paths)
+    policy_paths = list(filter(lambda x: int(x.split("_")[2]) <= end_policy_epoch, policy_paths))
+
     num_pre_policy = int((num / len(policy_paths) / max_episode_steps) + 1) * max_episode_steps
 
     episode_rewards = []
@@ -117,6 +119,16 @@ def save_as_h5(dataset, h5file_path):
         for key in dataset.keys():
             dataset_file[key] = dataset[key]
 
+
+def draw_xy_distribution(h5path):
+    env = get_particle_env()
+    dataset = env.get_dataset(h5path)
+    observations = dataset["observations"]
+    x = observations[:, -2]
+    y = observations[:, -1]
+    plt.scatter(x, y)
+    plt.show()
+
 #
 # def visualize_data(sample_path):
 #     import pandas as pd
@@ -134,12 +146,14 @@ def save_as_h5(dataset, h5file_path):
 if __name__ == "__main__":
     os.makedirs("samples", exist_ok=True)
 
-    train(int(1e4))
-    replay_samples, replay_min, replay_max = collect_multi_offline_data(int(2e5), policy_path_dir="./logs")
-    save_as_h5(replay_samples, "samples/particle-medium-replay-v0.hdf5")
-
-    random_samples, random_min, random_max = collect_offline_data(int(1e6))
-    save_as_h5(random_samples, "samples/particle-random-v0.hdf5")
-
-    medium_samples, medium_min, medium_max = collect_offline_data(int(1e6), policy_path='./logs/best_model/best_model.zip')
-    save_as_h5(medium_samples, "samples/particle-medium-v0.hdf5")
+    # train(int(1e5))
+    # replay_samples, replay_min, replay_max = collect_multi_offline_data(int(2e5), policy_path_dir="./logs")
+    # save_as_h5(replay_samples, "samples/particle-medium-replay-v0.hdf5")
+    #
+    # random_samples, random_min, random_max = collect_offline_data(int(1e6))
+    # save_as_h5(random_samples, "samples/particle-random-v0.hdf5")
+    #
+    # medium_samples, medium_min, medium_max = collect_offline_data(int(1e6), policy_path='./logs/rl_model_40000_steps.zip')
+    # save_as_h5(medium_samples, "samples/particle-medium-v0.hdf5")
+    #
+    draw_xy_distribution("samples/particle-medium-v0.hdf5")

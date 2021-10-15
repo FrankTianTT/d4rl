@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 from collections import defaultdict, Counter
 from d4rl.gym_particle.util import *
 
-
 class ParticleEnv(Env):
     """
     Toy environment for causal discovery and offline reinforcement learning.
@@ -19,7 +18,7 @@ class ParticleEnv(Env):
                  init=(0, 0),
                  goal=(100, 100),
                  region=1e3,
-                 v_dist_boundary=30,
+                 v_dist_boundary=90,
                  v_max=4):
         self.init = init
         self.goal = goal
@@ -47,13 +46,9 @@ class ParticleEnv(Env):
         self.reset_state()
         return np.array(self.state)
 
-    def render(self, mode='human'):
-
-        print("x:{:.2f}\ty:{:.2f}".format(*self.state[-2:]))
-
     def reset_state(self):
         self.state = []
-        px, py = list(np.array(self.init) + (np.random.rand(2) - 0.5) * 5)
+        px, py = list(np.array(self.init) + (np.random.rand(2) - 0.5) * 100)
         direction = (random.random() * (2 * math.pi)) % (2 * math.pi)
 
         v = self.get_v(calculate_distance([px, py], self.init))
@@ -88,10 +83,18 @@ class ParticleEnv(Env):
         return v
 
     def draw_v_curve(self):
-        x = np.arange(100)
+        x = np.arange(150)
         y = [self.get_v(d) for d in x]
         plt.plot(x, y)
         plt.show()
+
+    def render(self, mode="human"):
+        if mode == "human":
+            print("x:{:.2f}\ty:{:.2f}".format(*self.state[-2:]))
+        elif mode == "rgb_array":
+            return self.state[-2:]
+        else:
+            raise NotImplementedError
 
 
 class OfflineParticleEnv(ParticleEnv, offline_env.OfflineEnv):
@@ -101,7 +104,7 @@ class OfflineParticleEnv(ParticleEnv, offline_env.OfflineEnv):
 
 
 def find_v_dist_boundary(num=int(2e5), max_episode_steps=100):
-    v_dist_boundary = 30
+    v_dist_boundary = 90
     env = TimeLimit(ParticleEnv(v_dist_boundary=v_dist_boundary), max_episode_steps)
     episode_rewards = []
 
@@ -128,4 +131,6 @@ def get_particle_env(**kwargs):
 
 
 if __name__ == "__main__":
-    find_v_dist_boundary()
+    ParticleEnv().draw_v_curve()
+    #
+    # find_v_dist_boundary()
