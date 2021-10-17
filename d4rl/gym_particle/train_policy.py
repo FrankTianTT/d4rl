@@ -22,16 +22,15 @@ def train(total_timesteps=int(5e4)):
     env = TimeLimit(ParticleEnv(), max_episode_steps)
 
     eval_callback = EvalCallback(eval_env, best_model_save_path='./logs/best_model',
-                                 log_path='./logs/results', eval_freq=max_episode_steps)
+                                 log_path='./logs/results', eval_freq=5000)
 
-    checkpoint_callback = CheckpointCallback(save_freq=max_episode_steps, save_path='./logs/')
+    checkpoint_callback = CheckpointCallback(save_freq=5000, save_path='./logs/')
     callback = CallbackList([checkpoint_callback, eval_callback])
 
-    model = SAC('MlpPolicy', env, tensorboard_log="./log",
-                batch_size=max_episode_steps)
+    model = SAC('MlpPolicy', env, tensorboard_log="./log")
 
     model.learn(total_timesteps, callback=callback)
-    # return collect_offline_data_from_model(model)
+    return model
 
 
 def collect_offline_data_from_model(model):
@@ -52,7 +51,6 @@ def collect_offline_data(num=int(2e5), policy_path=None):
     env = TimeLimit(ParticleEnv(), max_episode_steps)
     episode_rewards = []
 
-    t = 0
     episode_reward = 0
     obs = env.reset()
     samples = defaultdict(list)
@@ -60,7 +58,7 @@ def collect_offline_data(num=int(2e5), policy_path=None):
     if policy_path is not None:
         model = SAC.load(policy_path)
 
-    while t < num:
+    for t in tqdm(range(num)):
         if model is None:
             action = env.action_space.sample()
         else:
@@ -81,8 +79,6 @@ def collect_offline_data(num=int(2e5), policy_path=None):
             episode_reward = 0
         else:
             obs = next_obs
-
-        t += 1
 
     np_samples = {}
     for key in samples.keys():
@@ -126,7 +122,7 @@ def draw_xy_distribution(h5path):
     observations = dataset["observations"]
     x = observations[:, -2]
     y = observations[:, -1]
-    plt.scatter(x, y)
+    plt.scatter(x, y, linewidths=0.01)
     plt.show()
 
 #
@@ -146,14 +142,19 @@ def draw_xy_distribution(h5path):
 if __name__ == "__main__":
     os.makedirs("samples", exist_ok=True)
 
-    # train(int(1e5))
+    # model = train(int(2e5))
+    # replay_samples = collect_offline_data_from_model(model)
+    # save_as_h5(replay_samples, "samples/particle-medium-replay-v0.hdf5")
+
     # replay_samples, replay_min, replay_max = collect_multi_offline_data(int(2e5), policy_path_dir="./logs")
     # save_as_h5(replay_samples, "samples/particle-medium-replay-v0.hdf5")
-    #
+
     # random_samples, random_min, random_max = collect_offline_data(int(1e6))
     # save_as_h5(random_samples, "samples/particle-random-v0.hdf5")
-    #
-    # medium_samples, medium_min, medium_max = collect_offline_data(int(1e6), policy_path='./logs/rl_model_40000_steps.zip')
-    # save_as_h5(medium_samples, "samples/particle-medium-v0.hdf5")
-    #
+
+    medium_samples, medium_min, medium_max = collect_offline_data(int(1e6), policy_path='./logs/rl_model_100000_steps.zip')
+    save_as_h5(medium_samples, "samples/particle-medium-v0.hdf5")
+
+    draw_xy_distribution("samples/particle-random-v0.hdf5")
     draw_xy_distribution("samples/particle-medium-v0.hdf5")
+    draw_xy_distribution("samples/particle-medium-replay-v0.hdf5")

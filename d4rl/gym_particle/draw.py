@@ -56,4 +56,5 @@ def expert_policy(obs):
 
 if __name__ == '__main__':
     # draw(expert_policy)
+    # draw(random_policy)
     draw(sac_policy)

@@ -18,7 +18,7 @@ class ParticleEnv(Env):
                  init=(0, 0),
                  goal=(100, 100),
                  region=1e3,
-                 v_dist_boundary=90,
+                 v_dist_boundary=100,
                  v_max=4):
         self.init = init
         self.goal = goal
@@ -48,7 +48,7 @@ class ParticleEnv(Env):
 
     def reset_state(self):
         self.state = []
-        px, py = list(np.array(self.init) + (np.random.rand(2) - 0.5) * 100)
+        px, py = list(np.array(self.init) + (np.random.rand(2) - 0.5) * 20)
         direction = (random.random() * (2 * math.pi)) % (2 * math.pi)
 
         v = self.get_v(calculate_distance([px, py], self.init))
@@ -59,7 +59,7 @@ class ParticleEnv(Env):
         self.last_state = self.state
 
         last_direction, last_v, last_vx, last_vy, last_px, last_py = self.last_state
-        angle = tanh(action, t=100, alpha=math.pi)
+        angle = tanh(action, t=100, alpha=math.pi / 3)
         direction = (last_direction + angle) % (2 * math.pi)
         v = self.get_v(calculate_distance([last_px, last_py], self.init))
         vx, vy = last_v * math.cos(direction), last_v * math.sin(direction)
@@ -104,8 +104,7 @@ class OfflineParticleEnv(ParticleEnv, offline_env.OfflineEnv):
 
 
 def find_v_dist_boundary(num=int(2e5), max_episode_steps=100):
-    v_dist_boundary = 90
-    env = TimeLimit(ParticleEnv(v_dist_boundary=v_dist_boundary), max_episode_steps)
+    env = TimeLimit(ParticleEnv(), max_episode_steps)
     episode_rewards = []
 
     l = []
@@ -116,7 +115,7 @@ def find_v_dist_boundary(num=int(2e5), max_episode_steps=100):
     while t < num:
         action = env.action_space.sample()
         next_obs, reward, done, _ = env.step(action)
-        l.append(calculate_distance(env.state[-2:], env.init) < v_dist_boundary)
+        l.append(calculate_distance(env.state[-2:], env.init) < env.v_dist_boundary)
 
         if done:
             obs = env.reset()
@@ -132,5 +131,5 @@ def get_particle_env(**kwargs):
 
 if __name__ == "__main__":
     ParticleEnv().draw_v_curve()
-    #
-    # find_v_dist_boundary()
+
+    find_v_dist_boundary()
