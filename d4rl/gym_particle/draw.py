@@ -4,35 +4,37 @@ from gym.wrappers import TimeLimit
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+from tqdm import tqdm
 from d4rl.gym_particle.util import *
 
 max_episode_steps = 100
-model = SAC.load("logs/rl_model_40000_steps.zip")
+model = SAC.load("logs/rl_model_80000_steps.zip")
 
 
-def draw(policy):
+def draw(policy, num):
     env = TimeLimit(ParticleEnv(), max_episode_steps)
-    rewards = 0
+    rewards = []
 
-    x = []
-    y = []
-    obs = env.reset()
-    while True:
-        x.append(obs[-2])
-        y.append(obs[-1])
+    for i in tqdm(range(num)):
+        x = []
+        y = []
+        rewards.append(0)
+        obs = env.reset()
+        while True:
+            x.append(obs[-2])
+            y.append(obs[-1])
 
-        action = policy(obs)
-        obs, reward, done, _ = env.step(action)
-        print(reward)
-        rewards += reward
+            action = policy(obs)
+            obs, reward, done, _ = env.step(action)
+            rewards[-1] += reward
 
-        if done:
-            break
+            if done:
+                break
 
-    plt.plot(x, y)
+        plt.plot(x, y)
     plt.show()
 
-    print(rewards)
+    print(sum(rewards) / num)
 
 
 def sac_policy(obs):
@@ -54,7 +56,12 @@ def expert_policy(obs):
     return [action]
 
 
+def try_policy(obs):
+    return [0]
+
+
 if __name__ == '__main__':
     # draw(expert_policy)
     # draw(random_policy)
-    draw(sac_policy)
+    draw(sac_policy, 100)
+

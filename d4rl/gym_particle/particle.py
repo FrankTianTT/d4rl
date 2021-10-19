@@ -9,22 +9,33 @@ import matplotlib.pyplot as plt
 from collections import defaultdict, Counter
 from d4rl.gym_particle.util import *
 
+
 class ParticleEnv(Env):
     """
     Toy environment for causal discovery and offline reinforcement learning.
     """
 
     def __init__(self,
+                 # basic
                  init=(0, 0),
                  goal=(100, 100),
                  region=1e3,
                  v_dist_boundary=100,
-                 v_max=4):
+                 v_max=4,
+                 # std
+                 d_std=0.05,
+                 v_std=0.1,
+                 pxy_std=0.1,
+                 ):
         self.init = init
         self.goal = goal
         self.region = region
         self.v_dist_boundary = v_dist_boundary
         self.v_max = v_max
+
+        self.d_std = d_std
+        self.v_std = v_std
+        self.pxy_std = pxy_std
 
         self.last_state = []
         self.state = []
@@ -59,12 +70,12 @@ class ParticleEnv(Env):
         self.last_state = self.state
 
         last_direction, last_v, last_vx, last_vy, last_px, last_py = self.last_state
-        angle = tanh(action, t=100, alpha=math.pi / 3)
+        angle = tanh(action, t=100, alpha=math.pi / 3) + random.normalvariate(0, self.d_std)
         direction = (last_direction + angle) % (2 * math.pi)
-        v = self.get_v(calculate_distance([last_px, last_py], self.init))
+        v = self.get_v(calculate_distance([last_px, last_py], self.init)) + random.normalvariate(0, self.v_std)
         vx, vy = last_v * math.cos(direction), last_v * math.sin(direction)
-        px = last_px + last_vx
-        py = last_py + last_vy
+        px = last_px + last_vx + random.normalvariate(0, self.pxy_std)
+        py = last_py + last_vy + random.normalvariate(0, self.pxy_std)
 
         self.state = [direction, v, vx, vy, px, py]
 
@@ -130,6 +141,8 @@ def get_particle_env(**kwargs):
 
 
 if __name__ == "__main__":
-    ParticleEnv().draw_v_curve()
-
-    find_v_dist_boundary()
+    # ParticleEnv().draw_v_curve()
+    #
+    # find_v_dist_boundary()
+    for _ in range(100):
+        print(random.normalvariate(0, 1))
