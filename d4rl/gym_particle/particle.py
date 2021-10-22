@@ -23,8 +23,9 @@ class ParticleEnv(Env):
                  v_dist_boundary=100,
                  v_max=4,
                  # std
-                 d_std=0.05,
+                 d_std=0.1,
                  v_std=0.1,
+                 vxy_std=0.2,
                  pxy_std=0.1,
                  ):
         self.init = init
@@ -35,6 +36,7 @@ class ParticleEnv(Env):
 
         self.d_std = d_std
         self.v_std = v_std
+        self.vxy_std = vxy_std
         self.pxy_std = pxy_std
 
         self.last_state = []
@@ -73,7 +75,8 @@ class ParticleEnv(Env):
         angle = tanh(action, t=100, alpha=math.pi / 3) + random.normalvariate(0, self.d_std)
         direction = (last_direction + angle) % (2 * math.pi)
         v = self.get_v(calculate_distance([last_px, last_py], self.init)) + random.normalvariate(0, self.v_std)
-        vx, vy = last_v * math.cos(direction), last_v * math.sin(direction)
+        vx, vy = last_v * math.cos(direction) + random.normalvariate(0, self.vxy_std), \
+                 last_v * math.sin(direction) + random.normalvariate(0, self.vxy_std)
         px = last_px + last_vx + random.normalvariate(0, self.pxy_std)
         py = last_py + last_vy + random.normalvariate(0, self.pxy_std)
 
