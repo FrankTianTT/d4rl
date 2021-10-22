@@ -142,19 +142,20 @@ def draw_xy_distribution(h5path):
 if __name__ == "__main__":
     os.makedirs("samples", exist_ok=True)
 
-    # model = train(int(1e5))
-    # replay_samples = collect_offline_data_from_model(model)
-    # save_as_h5(replay_samples, "samples/particle-medium-replay-v0.hdf5")
-
+    model = train(int(1e5))
+    replay_samples = collect_offline_data_from_model(model)
+    save_as_h5(replay_samples, "samples/particle-medium-replay-v0.hdf5")
+    #
     # replay_samples, replay_min, replay_max = collect_multi_offline_data(int(2e5), policy_path_dir="./logs")
     # save_as_h5(replay_samples, "samples/particle-medium-replay-v0.hdf5")
+    #
+    random_samples, random_min, random_max = collect_offline_data(int(5e5))
+    save_as_h5(random_samples, "samples/particle-random-v0.hdf5")
 
-    # random_samples, random_min, random_max = collect_offline_data(int(5e5))
-    # save_as_h5(random_samples, "samples/particle-random-v0.hdf5")
-    #
-    # medium_samples, medium_min, medium_max = collect_offline_data(int(5e5), policy_path='./logs/rl_model_100000_steps.zip')
-    # save_as_h5(medium_samples, "samples/particle-medium-v0.hdf5")
-    #
-    # draw_xy_distribution("samples/particle-random-v0.hdf5")
-    # draw_xy_distribution("samples/particle-medium-v0.hdf5")
-    # draw_xy_distribution("samples/particle-medium-replay-v0.hdf5")
+    medium_samples, medium_min, medium_max = collect_offline_data(int(5e5), policy_path='./logs/rl_model_100000_steps.zip')
+    save_as_h5(medium_samples, "samples/particle-medium-v0.hdf5")
+
+    draw_xy_distribution("samples/particle-random-v0.hdf5")
+    draw_xy_distribution("samples/particle-medium-v0.hdf5")
+    draw_xy_distribution("samples/particle-medium-replay-v0.hdf5")
+#

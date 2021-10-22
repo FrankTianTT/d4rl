@@ -8,7 +8,7 @@ from tqdm import tqdm
 from d4rl.gym_particle.util import *
 
 max_episode_steps = 100
-model = SAC.load("logs/rl_model_80000_steps.zip")
+model = SAC.load("logs/rl_model_100000_steps.zip")
 
 
 def draw(policy, num):
@@ -63,5 +63,5 @@ def try_policy(obs):
 if __name__ == '__main__':
     # draw(expert_policy)
     # draw(random_policy)
-    draw(sac_policy, 100)
+    draw(sac_policy, 5)
 
