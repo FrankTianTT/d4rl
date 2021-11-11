@@ -11,15 +11,18 @@ from rlkit.torch import pytorch_util as ptu
 
 itr_re = re.compile(r'itr_(?P<itr>[0-9]+).pkl')
 
+
 def load(pklfile):
     params = torch.load(pklfile)
     return params['trainer/policy']
+
 
 def get_pkl_itr(pklfile):
     match = itr_re.search(pklfile)
     if match:
         return match.group('itr')
-    raise ValueError(pklfile+" has no iteration number.")
+    raise ValueError(pklfile + " has no iteration number.")
+
 
 def get_policy_wts(params):
     out_dict = {
@@ -34,19 +37,21 @@ def get_policy_wts(params):
     }
     return out_dict
 
+
 def get_reset_data():
     data = dict(
-        observations = [],
-        next_observations = [],
-        actions = [],
-        rewards = [],
-        terminals = [],
-        timeouts = [],
-        logprobs = [],
-        qpos = [],
-        qvel = []
+        observations=[],
+        next_observations=[],
+        actions=[],
+        rewards=[],
+        terminals=[],
+        timeouts=[],
+        logprobs=[],
+        qpos=[],
+        qvel=[]
     )
     return data
+
 
 def rollout(policy, env_name, max_path, num_data, random=False):
     env = gym.make(env_name)
@@ -55,11 +60,10 @@ def rollout(policy, env_name, max_path, num_data, random=False):
     traj_data = get_reset_data()
 
     _returns = 0
-    t = 0 
+    t = 0
     done = False
     s = env.reset()
     while len(data['rewards']) < num_data:
-
 
         if random:
             a = env.action_space.sample()
@@ -71,7 +75,7 @@ def rollout(policy, env_name, max_path, num_data, random=False):
             logprob = distr.log_prob(a)
             a = ptu.get_numpy(a).squeeze()
 
-        #mujoco only
+        # mujoco only
         qpos, qvel = env.sim.data.qpos.ravel().copy(), env.sim.data.qvel.ravel().copy()
 
         try:
@@ -96,7 +100,6 @@ def rollout(policy, env_name, max_path, num_data, random=False):
         elif done:
             terminal = True
 
-
         traj_data['observations'].append(s)
         traj_data['actions'].append(a)
         traj_data['next_observations'].append(ns)
@@ -109,14 +112,15 @@ def rollout(policy, env_name, max_path, num_data, random=False):
 
         s = ns
         if terminal or timeout:
-            print('Finished trajectory. Len=%d, Returns=%f. Progress:%d/%d' % (t, _returns, len(data['rewards']), num_data))
+            print('Finished trajectory. Len=%d, Returns=%f. Progress:%d/%d' % (
+            t, _returns, len(data['rewards']), num_data))
             s = env.reset()
             t = 0
             _returns = 0
             for k in data:
                 data[k].extend(traj_data[k])
             traj_data = get_reset_data()
-    
+
     new_data = dict(
         observations=np.array(data['observations']).astype(np.float32),
         actions=np.array(data['actions']).astype(np.float32),
@@ -132,7 +136,6 @@ def rollout(policy, env_name, max_path, num_data, random=False):
     for k in new_data:
         new_data[k] = new_data[k][:num_data]
     return new_data
-
 
 
 if __name__ == "__main__":
@@ -165,5 +168,5 @@ if __name__ == "__main__":
         hfile['metadata/policy/nonlinearity'] = np.string_('relu')
         hfile['metadata/policy/output_distribution'] = np.string_('tanh_gaussian')
         for k, v in get_policy_wts(policy).items():
-            hfile['metadata/policy/'+k] = v
+            hfile['metadata/policy/' + k] = v
     hfile.close()
