@@ -9,21 +9,11 @@ DEFAULT_NOISE_PARAMS = {"pos": {"xyz": 0.01,
                                 "roll": 1,
                                 "pitch": 1,
                                 "yaw": 1,
-                                "hinge": 0.01},
+                                "hinge": 1},
                         "vel": {"xyz": 0.01,
                                 "rotate": 0.01,
                                 "hinge": 0.01},
                         "action": 0.01}
-
-
-# DEFAULT_NOISE_PARAMS = {"pos": {"xyz": 0.1,
-#                                 "roll": 3,
-#                                 "pitch": 3,
-#                                 "yaw": 3,
-#                                 "hinge": 0.1},
-#                         "vel": {"xyz": 0.1,
-#                                 "rotate": 0.1,
-#                                 "hinge": 0.1}}
 
 class OfflineAntEnv(AntEnv, offline_env.OfflineEnv):
     def __init__(self, noise_params=None, **kwargs):
@@ -82,7 +72,7 @@ def get_noisy_walker_env(**kwargs):
 
 
 if __name__ == '__main__':
-    env = get_noisy_walker_env()
+    env = get_noisy_ant_env()
     env.reset()
     env.render()
 

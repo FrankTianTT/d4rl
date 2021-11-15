@@ -1,5 +1,8 @@
 import gym
-import d4rl
+from d4rl.gym_mujoco.ant import AntEnv
+from d4rl.gym_mujoco.hopper import HopperEnv
+from d4rl.gym_mujoco.half_cheetah import HalfCheetahEnv
+from d4rl.gym_mujoco.walker2d import Walker2dEnv
 
 import rlkit.torch.pytorch_util as ptu
 from rlkit.data_management.env_replay_buffer import EnvReplayBuffer
@@ -11,9 +14,67 @@ from rlkit.torch.sac.sac import SACTrainer
 from rlkit.torch.networks import ConcatMlp
 from rlkit.torch.torch_rl_algorithm import TorchBatchRLAlgorithm
 
-def experiment(env, variant):
-    expl_env = NormalizedBoxEnv(gym.make(env))
-    eval_env = NormalizedBoxEnv(gym.make(env))
+DEFAULT_NOISE_PARAMS = {"pos": {"xyz": 0.01,
+                                "roll": 1,
+                                "pitch": 1,
+                                "yaw": 1,
+                                "hinge": 1},
+                        "vel": {"xyz": 0.01,
+                                "rotate": 0.01,
+                                "hinge": 0.01},
+                        "action": 0.01}
+
+
+class LogEnvReplayBuffer(EnvReplayBuffer):
+    def __init__(self, max_replay_buffer_size, expl_env):
+        env_info_sizes = {"terminal": 1,
+                          "timeout": 1, }
+        super(LogEnvReplayBuffer, self).__init__(max_replay_buffer_size, expl_env, env_info_sizes)
+
+    def add_path(self, path):
+        for i, (obs, action, reward, next_obs, terminal, env_info, done) in enumerate(zip(
+                path["observations"], path["actions"], path["rewards"], path["next_observations"], path["terminals"],
+                path["env_infos"], path["dones"],
+        )):
+            self.add_sample(
+                observation=obs,
+                action=action,
+                reward=reward,
+                next_observation=next_obs,
+                terminal=terminal,
+                env_info=env_info,
+                done=done
+            )
+        self.terminate_episode()
+
+    def add_sample(self, observation, action, reward, next_observation,
+                   terminal, env_info, done):
+        self._observations[self._top] = observation
+        self._actions[self._top] = action
+        self._rewards[self._top] = reward
+        self._terminals[self._top] = terminal
+        self._next_obs[self._top] = next_observation
+
+        self._env_infos["terminal"][self._top] = terminal
+        self._env_infos["timeout"][self._top] = done and not terminal
+        self._advance()
+
+    def get_snapshot(self):
+        env_infos = {}
+        for key in self._env_info_keys:
+            env_infos[key] = self._env_infos[key][:self._top]
+        return dict(
+            observations=self._observations[:self._top],
+            next_observations=self._next_obs[:self._top],
+            actions=self._actions[:self._top],
+            rewards=self._rewards[:self._top],
+            env_infos=env_infos,
+        )
+
+
+def experiment(variant, env_class):
+    expl_env = NormalizedBoxEnv(env_class(DEFAULT_NOISE_PARAMS))
+    eval_env = NormalizedBoxEnv(env_class(DEFAULT_NOISE_PARAMS))
     obs_dim = expl_env.observation_space.low.size
     action_dim = eval_env.action_space.low.size
 
@@ -52,7 +113,7 @@ def experiment(env, variant):
         expl_env,
         policy,
     )
-    replay_buffer = EnvReplayBuffer(
+    replay_buffer = LogEnvReplayBuffer(
         variant['replay_buffer_size'],
         expl_env,
     )
@@ -78,17 +139,21 @@ def experiment(env, variant):
     algorithm.train()
 
 
-if __name__ == "__main__":
-    env = "noisy-hopper-medium-v0"
+def train(env_name):
+    env_classes = dict(hopper=HopperEnv,
+                       halfcheetah=HalfCheetahEnv,
+                       walker2d=Walker2dEnv)
+    num_epochs = dict(hopper=200,
+                      halfcheetah=100,
+                      walker2d=100)
 
-    # noinspection PyTypeChecker
     variant = dict(
         algorithm="SAC",
         version="normal",
         layer_size=256,
         replay_buffer_size=int(1E6),
         algorithm_kwargs=dict(
-            num_epochs=200,
+            num_epochs=num_epochs[env_name],
             num_eval_steps_per_epoch=5000,
             num_trains_per_train_loop=1000,
             num_expl_steps_per_train_loop=1000,
@@ -106,6 +171,14 @@ if __name__ == "__main__":
             use_automatic_entropy_tuning=True,
         ),
     )
-    setup_logger(env, variant=variant)
-    ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)
-    experiment(env, variant)
+    log_dir = setup_logger("walker2d", variant=variant)
+    ptu.set_gpu_mode(True)
+    #
+    experiment(variant, env_classes[env_name])
+    #
+    return log_dir
+    #
+    # return "/home/frank/Documents/project/rl/rlkit/data/walker2d/walker2d_2021_11_14_15_13_48_0000--s-0"
+
+if __name__ == "__main__":
+    train("walker2d")

@@ -64,8 +64,6 @@ class MujocoEnv(gym.Env):
             raise IOError("File %s does not exist" % fullpath)
         ###
         # added for adding noise
-        self.joint_types = []
-        self.parse_xml(fullpath)
         self.qpos_begin = qpos_begin
         self.qvel_clip = qvel_clip
         self.add_cfrc_ext = add_cfrc_ext
@@ -149,7 +147,8 @@ class MujocoEnv(gym.Env):
 
     def do_simulation(self, ctrl, n_frames):
         ### added for adding noise
-        ctrl += add_multi_dim_noise([self.noise_params["action"]] * (len(ctrl)))
+        if self.noise_params is not None:
+            ctrl += add_multi_dim_noise([self.noise_params["action"]] * (len(ctrl)))
         ###
         self.sim.data.ctrl[:] = ctrl
         for _ in range(n_frames):
@@ -219,15 +218,6 @@ class MujocoEnv(gym.Env):
     ###
     # added for adding noise
 
-    def parse_xml(self, xml_path):
-        dom_obj = xmldom.parse(xml_path)
-        mujoco = dom_obj.documentElement
-        world_body = mujoco.getElementsByTagName("worldbody")[0]
-        joint_list = world_body.getElementsByTagName("joint")
-        for joint in joint_list:
-            t = joint.getAttribute("type")
-            self.joint_types.append(t)
-
     def _get_obs(self):
         if self.noise_params is None:
             return self._get_deterministic_obs()
@@ -244,24 +234,40 @@ class MujocoEnv(gym.Env):
             obs_list.append(np.clip(self.sim.data.cfrc_ext, -1, 1).flat)
         return np.concatenate(obs_list)
 
-    def _get_noisy_obs(self):
-        qpos = self.sim.data.qpos.flat
-        qvel = self.sim.data.qvel.flat
-        # add noise
-        if self.joint_types[0] == "free":  # a free body
-            qpos[:3] += add_multi_dim_noise([self.noise_params["pos"]["xyz"]] * 3)
-            qpos[3:7] = add_noise_for_qua(qpos[3:7], self.noise_params["pos"])
-            qpos[7:] += add_multi_dim_noise([self.noise_params["pos"]["hinge"]] * (len(qpos) - 7))
-            qvel[:3] += add_multi_dim_noise([self.noise_params["vel"]["xyz"]] * 3)
-            qvel[3:6] += add_multi_dim_noise([self.noise_params["vel"]["rotate"]] * 3)
-            qvel[6:] += add_multi_dim_noise([self.noise_params["vel"]["hinge"]] * (len(qvel) - 6))
-        else:
-            # only for hopper
-            qpos[:2] += add_multi_dim_noise([self.noise_params["pos"]["xyz"]] * 2)
-            qpos[2:] += add_multi_dim_noise([self.noise_params["pos"]["xyz"]] * (len(qpos) - 2))
-            qvel[:2] += add_multi_dim_noise([self.noise_params["vel"]["xyz"]] * 2)
-            qvel[2:] += add_multi_dim_noise([self.noise_params["vel"]["hinge"]] * (len(qvel) - 2))
+    def parse_mujoco_joint(self):
+        """
+        0:  free    7-pos   6-vel
+        1:
+        2:  slide   1-pos   1-vel
+        3:  hinge   1-pos   1-vel
+        """
+        qpos = []
+        qvel = []
+        for jnt_id, jnt_type in enumerate(self.model.jnt_type):
+            jnt_name = self.model.joint_id2name(jnt_id)
+            jnt_qpos = self.sim.data.get_joint_qpos(jnt_name)
+            jnt_qvel = self.sim.data.get_joint_qvel(jnt_name)
+            if jnt_type == 0:
+                jnt_qpos[:3] += add_multi_dim_noise([self.noise_params["pos"]["xyz"]] * 3)
+                jnt_qpos[3:7] = add_noise_for_qua(jnt_qpos[3:7], self.noise_params["pos"])
+                jnt_qvel[:3] += add_multi_dim_noise([self.noise_params["vel"]["xyz"]] * 3)
+                jnt_qvel[3:6] += add_multi_dim_noise([self.noise_params["vel"]["rotate"]] * 3)
+            elif jnt_type == 1:
+                raise NotImplementedError
+            elif jnt_type == 2:
+                jnt_qpos += add_multi_dim_noise([self.noise_params["pos"]["xyz"]])
+                jnt_qvel += add_multi_dim_noise([self.noise_params["vel"]["xyz"]])
+            else:
+                jnt_qpos += add_multi_dim_noise([self.noise_params["pos"]["hinge"] * np.pi / 180])
+                jnt_qvel += add_multi_dim_noise([self.noise_params["vel"]["hinge"]])
+            qpos.extend(jnt_qpos)
+            qvel.extend(jnt_qvel)
 
+        return qpos, qvel
+
+
+    def _get_noisy_obs(self):
+        qpos, qvel = self.parse_mujoco_joint()
         obs_list = [qpos[self.qpos_begin:]]
         if not self.qvel_clip:
             obs_list.append(qvel)

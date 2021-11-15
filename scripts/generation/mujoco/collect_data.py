@@ -129,13 +129,39 @@ def rollout(policy, env_name, max_path, num_data, random=False):
         terminals=np.array(data['terminals']).astype(np.bool),
         timeouts=np.array(data['timeouts']).astype(np.bool)
     )
-    new_data['infos/action_log_probs'] = np.array(data['logprobs']).astype(np.float32)
-    new_data['infos/qpos'] = np.array(data['qpos']).astype(np.float32)
-    new_data['infos/qvel'] = np.array(data['qvel']).astype(np.float32)
+    # new_data['infos/action_log_probs'] = np.array(data['logprobs']).astype(np.float32)
+    # new_data['infos/qpos'] = np.array(data['qpos']).astype(np.float32)
+    # new_data['infos/qvel'] = np.array(data['qvel']).astype(np.float32)
 
     for k in new_data:
         new_data[k] = new_data[k][:num_data]
     return new_data
+
+def sample(env, pklfile, output_file, max_path, num_data, random, seed=0):
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+    ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)
+
+    policy = None
+    if not random:
+        policy = load(pklfile)
+    data = rollout(policy, env, max_path=max_path, num_data=num_data, random=random)
+
+    hfile = h5py.File(output_file, 'w')
+    for k in data:
+        hfile.create_dataset(k, data=data[k], compression='gzip')
+
+    # if random:
+    #     pass
+    # else:
+    #     hfile['metadata/algorithm'] = np.string_('SAC')
+    #     hfile['metadata/iteration'] = np.array([get_pkl_itr(pklfile)], dtype=np.int32)[0]
+    #     hfile['metadata/policy/nonlinearity'] = np.string_('relu')
+    #     hfile['metadata/policy/output_distribution'] = np.string_('tanh_gaussian')
+    #     for k, v in get_policy_wts(policy).items():
+    #         hfile['metadata/policy/' + k] = v
+    hfile.close()
 
 
 if __name__ == "__main__":
@@ -148,25 +174,5 @@ if __name__ == "__main__":
     parser.add_argument('--random', action='store_true')
     parser.add_argument('--seed', type=int, default=0)
     args = parser.parse_args()
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
 
-    policy = None
-    if not args.random:
-        policy = load(args.pklfile)
-    data = rollout(policy, args.env, max_path=args.max_path, num_data=args.num_data, random=args.random)
-
-    hfile = h5py.File(args.output_file, 'w')
-    for k in data:
-        hfile.create_dataset(k, data=data[k], compression='gzip')
-
-    if args.random:
-        pass
-    else:
-        hfile['metadata/algorithm'] = np.string_('SAC')
-        hfile['metadata/iteration'] = np.array([get_pkl_itr(args.pklfile)], dtype=np.int32)[0]
-        hfile['metadata/policy/nonlinearity'] = np.string_('relu')
-        hfile['metadata/policy/output_distribution'] = np.string_('tanh_gaussian')
-        for k, v in get_policy_wts(policy).items():
-            hfile['metadata/policy/' + k] = v
-    hfile.close()
+    sample(args.env, args.pklfile, args.output_file, args.max_path, args.num_data, args.random, args.seed)

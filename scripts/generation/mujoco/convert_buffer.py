@@ -17,11 +17,7 @@ def load(pklfile):
         'rewards': params['replay_buffer/rewards'],
         'terminals': env_infos['terminal'].squeeze(),
         'timeouts': env_infos['timeout'].squeeze(),
-        'infos/action_log_probs': env_infos['action_log_prob'].squeeze(),
     }
-    if 'qpos' in env_infos:
-        results['infos/qpos'] = env_infos['qpos']
-        results['infos/qvel'] = env_infos['qvel']
     return results
 
 def get_pkl_itr(pklfile):
@@ -30,6 +26,13 @@ def get_pkl_itr(pklfile):
         return match.group('itr')
     raise ValueError(pklfile+" has no iteration number.")
 
+def convert(pklfile, output_file):
+    data = load(pklfile)
+    hfile = h5py.File(output_file, 'w')
+    for k in data:
+        hfile.create_dataset(k, data=data[k], compression='gzip')
+
+    hfile.close()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -37,10 +40,4 @@ if __name__ == "__main__":
     parser.add_argument('--output_file', type=str, default='output.hdf5')
     args = parser.parse_args()
 
-    data = load(args.pklfile)
-    hfile = h5py.File(args.output_file, 'w')
-    for k in data:
-        hfile.create_dataset(k, data=data[k], compression='gzip')
-    hfile['metadata/algorithm'] = np.string_('SAC')
-    hfile['metadata/iteration'] = np.array([get_pkl_itr(args.pklfile)], dtype=np.int32)[0]
-    hfile.close()
+    convert(args.pklfile, args.output_file)

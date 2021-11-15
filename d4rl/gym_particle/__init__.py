@@ -4,9 +4,9 @@ from d4rl.gym_particle import particle
 
 
 DATASET_URLS = {
-    'particle-random-v0': 'http://114.212.21.162/offline_dataset/particle-random-v0.hdf5',
-    'particle-medium-v0': 'http://114.212.21.162/offline_dataset/particle-medium-v0.hdf5',
-    'particle-medium-replay-v0': 'http://114.212.21.162/offline_dataset/particle-medium-replay-v0.hdf5'
+    'particle-random-v0': 'http://drive.franktian.top/offline_dataset/particle-random-v0.hdf5',
+    'particle-medium-v0': 'http://drive.franktian.top/offline_dataset/particle-medium-v0.hdf5',
+    'particle-medium-replay-v0': 'http://drive.franktian.top/offline_dataset/particle-medium-replay-v0.hdf5'
 }
 
 sac_min = -160.7

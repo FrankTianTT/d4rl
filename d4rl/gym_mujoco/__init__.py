@@ -275,15 +275,15 @@ noisy_score = {
          "ant": 0,
          "walker2d": 0}
 }
-NOISY_HOPPER_RANDOM_SCORE = -20.272305
-NOISY_HALFCHEETAH_RANDOM_SCORE = -280.178953
-NOISY_WALKER_RANDOM_SCORE = 1.629008
-NOISY_ANT_RANDOM_SCORE = -325.6
+NOISY_HOPPER_RANDOM_SCORE = 0
+NOISY_HALFCHEETAH_RANDOM_SCORE = 0
+NOISY_WALKER_RANDOM_SCORE = 0
+NOISY_ANT_RANDOM_SCORE = 0
 
-NOISY_HOPPER_EXPERT_SCORE = 3234.3
-NOISY_HALFCHEETAH_EXPERT_SCORE = 12135.0
-NOISY_WALKER_EXPERT_SCORE = 4592.3
-NOISY_ANT_EXPERT_SCORE = 3879.7
+NOISY_HOPPER_EXPERT_SCORE = 0
+NOISY_HALFCHEETAH_EXPERT_SCORE = 0
+NOISY_WALKER_EXPERT_SCORE = 0
+NOISY_ANT_EXPERT_SCORE = 0
 
 for agent in ['hopper', 'halfcheetah', 'ant', 'walker2d']:
     for dataset in ['random', 'medium', 'medium-replay']:
@@ -296,6 +296,6 @@ for agent in ['hopper', 'halfcheetah', 'ant', 'walker2d']:
             kwargs={
                 'ref_min_score': noisy_score["random"][agent],
                 'ref_max_score': noisy_score["expert"][agent],
-                'dataset_url': ""
+                'dataset_url': "http://drive.franktian.top/offline_dataset/{}.hdf5".format(env_name)
             }
         )
