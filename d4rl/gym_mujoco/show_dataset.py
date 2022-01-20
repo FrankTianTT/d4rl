@@ -14,17 +14,24 @@ def get_keys(h5file):
     h5file.visititems(visitor)
     return keys
 
-
-if __name__ == '__main__':
-    # env = gym.make('walker2d-medium-replay-v0')
-
-    # dataset = env.get_dataset()
-
+def from_path(path):
     dataset = {}
     h5path = "/home/frank/Documents/project/offline_rl/d4rl/output.hdf5"
     with h5py.File(h5path, 'r') as dataset_file:
         for k in tqdm(get_keys(dataset_file), desc="load datafile"):
             dataset[k] = dataset_file[k][:]
+
+    return dataset
+
+def from_name(env_name):
+    env = gym.make(env_name)
+
+    dataset = env.get_dataset()
+
+    return dataset
+
+if __name__ == '__main__':
+    dataset = from_name('noisy-halfcheetah-random-v0')
 
     rewards = dataset["rewards"]
     terminals = dataset["terminals"]

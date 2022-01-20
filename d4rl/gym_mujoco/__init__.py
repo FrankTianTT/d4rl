@@ -34,6 +34,7 @@ score = {
 for agent in ['hopper', 'halfcheetah', 'ant', 'walker2d']:
     for dataset in ['random', 'medium', 'medium-replay']:
         env_name = '%s-%s-v0' % (agent, dataset)
+        url = "{}_{}".format(agent, dataset).replace("medium-replay", "mixed")
         register(
             id=env_name,
             entry_point='d4rl.gym_mujoco.gym_envs:get_%s_env' % agent.replace('halfcheetah', 'cheetah').replace(
@@ -42,7 +43,7 @@ for agent in ['hopper', 'halfcheetah', 'ant', 'walker2d']:
             kwargs={
                 'ref_min_score': score["random"][agent],
                 'ref_max_score': score["expert"][agent],
-                'dataset_url': "http://rail.eecs.berkeley.edu/datasets/offline_rl/gym_mujoco/{}.hdf5".format(env_name)
+                'dataset_url': "http://rail.eecs.berkeley.edu/datasets/offline_rl/gym_mujoco/{}.hdf5".format(url)
             }
         )
 
@@ -74,16 +75,24 @@ for agent in ['hopper', 'halfcheetah', 'ant', 'walker2d']:
                 'dataset_url': "http://drive.franktian.top/offline_dataset/{}.hdf5".format(env_name)
             }
         )
-for ratio in range(10):
-    print(ratio)
-register(
-    id=env_name,
-    entry_point='d4rl.gym_mujoco.gym_envs:get_noisy_%s_env' % agent.replace('halfcheetah', 'cheetah').replace(
-        'walker2d', 'walker'),
-    max_episode_steps=1000,
-    kwargs={
-        'ref_min_score': noisy_score["random"][agent],
-        'ref_max_score': noisy_score["expert"][agent],
-        'dataset_url': "http://drive.franktian.top/offline_dataset/{}.hdf5".format(env_name)
-    }
-)
+
+for agent in ['hopper', 'halfcheetah', 'ant', 'walker2d']:
+    if agent != "hopper":
+        continue
+
+    for ratio in range(1, 11):
+        env_name = '%s-%d-v0' % (agent, ratio)
+        register(
+            id=env_name,
+            entry_point='d4rl.gym_mujoco.gym_envs:get_mixed_%s_env' % agent.replace('halfcheetah', 'cheetah').replace(
+                'walker2d', 'walker'),
+            max_episode_steps=1000,
+            kwargs={
+                'ref_min_score': noisy_score["random"][agent],
+                'ref_max_score': noisy_score["expert"][agent],
+                'dataset_urls': ["http://rail.eecs.berkeley.edu/datasets/offline_rl/gym_mujoco/{}_medium.hdf5".format(agent),
+                    "http://rail.eecs.berkeley.edu/datasets/offline_rl/gym_mujoco/{}_mixed.hdf5".format(agent), 
+                ],
+                "ratio": ratio
+            }
+        )

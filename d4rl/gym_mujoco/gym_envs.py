@@ -70,9 +70,9 @@ def get_noisy_hopper_env(**kwargs):
 def get_noisy_walker_env(**kwargs):
     return NormalizedBoxEnv(OfflineWalker2dEnv(DEFAULT_NOISE_PARAMS, **kwargs))
 
-class MixedOfflineHopperEnv(Walker2dEnv, offline_env.MixedOfflineEnv):
+class MixedOfflineHopperEnv(HopperEnv, offline_env.MixedOfflineEnv):
     def __init__(self, noise_params=None, **kwargs):
-        Walker2dEnv.__init__(self, noise_params)
+        HopperEnv.__init__(self, noise_params)
         offline_env.MixedOfflineEnv.__init__(self, **kwargs)
 
 def get_mixed_hopper_env(**kwargs):
@@ -80,13 +80,10 @@ def get_mixed_hopper_env(**kwargs):
 
 
 if __name__ == '__main__':
-    env = get_noisy_ant_env()
-    env.reset()
-    env.render()
+    env = get_mixed_hopper_env(dataset_urls=["http://rail.eecs.berkeley.edu/datasets/offline_rl/gym_mujoco/hopper_medium.hdf5",
+    "http://rail.eecs.berkeley.edu/datasets/offline_rl/gym_mujoco/hopper_mixed.hdf5", 
+                ],
+                ratio=1)
 
-    while True:
-        o, r, d, i = env.step(env.action_space.sample())
-        env.render()
-
-        if d:
-            env.reset()
+    env.get_dataset()
+    
