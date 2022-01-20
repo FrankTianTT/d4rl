@@ -184,13 +184,7 @@ class MixedOfflineEnv(gym.Env):
 
             data_dicts.append(data_dict)
 
-        l = data_dicts[1]['rewards'].shape[0]
-        random_idxes = np.random.permutation(l)[:int(l * self.ratio / 10)]
-        print(len(random_idxes))
-        for key in ['observations', 'actions', 'rewards', 'terminals']:
-            data_dicts[0][key] = np.concatenate([data_dicts[0][key], data_dicts[1][key][random_idxes]])
-
-        return data_dicts[0]
+        return data_dicts
 
 class OfflineEnvWrapper(gym.Wrapper, OfflineEnv):
     """

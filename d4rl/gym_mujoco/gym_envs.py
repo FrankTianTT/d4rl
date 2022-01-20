@@ -80,10 +80,11 @@ def get_mixed_hopper_env(**kwargs):
 
 
 if __name__ == '__main__':
+    import d4rl
     env = get_mixed_hopper_env(dataset_urls=["http://rail.eecs.berkeley.edu/datasets/offline_rl/gym_mujoco/hopper_medium.hdf5",
     "http://rail.eecs.berkeley.edu/datasets/offline_rl/gym_mujoco/hopper_mixed.hdf5", 
                 ],
                 ratio=1)
 
-    env.get_dataset()
+    data = d4rl.qlearning_dataset(env)
     

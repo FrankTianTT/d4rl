@@ -2,7 +2,7 @@ import os
 import sys
 import collections
 import numpy as np
-
+import random
 import d4rl.infos
 from d4rl.offline_env import set_dataset_path, get_keys
 
@@ -62,44 +62,26 @@ def get_normalized_score(env_name, score):
     ref_max_score = d4rl.infos.REF_MAX_SCORE[env_name]
     return (score - ref_min_score) / (ref_max_score - ref_min_score)
 
-def qlearning_dataset(env, dataset=None, terminate_on_end=False, **kwargs):
-    """
-    Returns datasets formatted for use by standard Q-learning algorithms,
-    with observations, actions, next_observations, rewards, and a terminal
-    flag.
+def qlearning_dataset(env):
+    print(hasattr(env, "ratio"))
+    if hasattr(env, "ratio"):
+        dataset1, dataset2 = env.get_dataset()
+        qlearning_dataset1 = get_qlearning_dataset(dataset1, ratio=10)
+        qlearning_dataset2 = get_qlearning_dataset(dataset2, env.ratio)
+        for key in ['observations', 'actions', 'rewards', 'terminals', 'next_observations']:
+            qlearning_dataset1[key] = np.concatenate([qlearning_dataset1[key], qlearning_dataset2[key]])
+        return qlearning_dataset1
 
-    Args:
-        env: An OfflineEnv object.
-        dataset: An optional dataset to pass in for processing. If None,
-            the dataset will default to env.get_dataset()
-        terminate_on_end (bool): Set done=True on the last timestep
-            in a trajectory. Default is False, and will discard the
-            last timestep in each trajectory.
-        **kwargs: Arguments to pass to env.get_dataset().
+    else:
+        return get_qlearning_dataset(env.get_dataset(), ratio=10)
 
-    Returns:
-        A dictionary containing keys:
-            observations: An N x dim_obs array of observations.
-            actions: An N x dim_action array of actions.
-            next_observations: An N x dim_obs array of next observations.
-            rewards: An N-dim float array of rewards.
-            terminals: An N-dim boolean array of "done" or episode termination flags.
-    """
-    if dataset is None:
-        dataset = env.get_dataset(**kwargs)
-
+def get_qlearning_dataset(dataset, terminate_on_end=False, ratio=1, **kwargs):
     N = dataset['rewards'].shape[0]
     obs_ = []
     next_obs_ = []
     action_ = []
     reward_ = []
     done_ = []
-
-    # The newer version of the dataset adds an explicit
-    # timeouts field. Keep old method for backwards compatability.
-    use_timeouts = False
-    if 'timeouts' in dataset:
-        use_timeouts = True
 
     episode_step = 0
     for i in range(N-1):
@@ -109,10 +91,8 @@ def qlearning_dataset(env, dataset=None, terminate_on_end=False, **kwargs):
         reward = dataset['rewards'][i].astype(np.float32)
         done_bool = bool(dataset['terminals'][i])
 
-        if use_timeouts:
-            final_timestep = dataset['timeouts'][i]
-        else:
-            final_timestep = (episode_step == env._max_episode_steps - 1)
+        final_timestep = dataset['timeouts'][i]
+
         if (not terminate_on_end) and final_timestep:
             # Skip this transition and don't apply terminals on the last step of an episode
             episode_step = 0
@@ -120,11 +100,12 @@ def qlearning_dataset(env, dataset=None, terminate_on_end=False, **kwargs):
         if done_bool or final_timestep:
             episode_step = 0
 
-        obs_.append(obs)
-        next_obs_.append(new_obs)
-        action_.append(action)
-        reward_.append(reward)
-        done_.append(done_bool)
+        if random.randint(0, 9) < ratio:
+            obs_.append(obs)
+            next_obs_.append(new_obs)
+            action_.append(action)
+            reward_.append(reward)
+            done_.append(done_bool)
         episode_step += 1
 
     return {
