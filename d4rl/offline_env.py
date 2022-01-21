@@ -26,6 +26,9 @@ def get_keys(h5file):
     h5file.visititems(visitor)
     return keys
 
+dataset_name_dict = {"https://box.nju.edu.cn/f/f988a549016646928b1a/?dl=1": "particle-random-v0.hdf5",
+"https://box.nju.edu.cn/f/8352da217e6e4614adfa/?dl=1": "particle-medium-v0.hdf5",
+"https://box.nju.edu.cn/f/af872f1d1ef84d1189a4/?dl=1": "particle-medium-replay-v0.hdf5"}
 
 def filepath_from_url(dataset_url):
     _, dataset_name = os.path.split(dataset_url)
