@@ -63,7 +63,6 @@ def get_normalized_score(env_name, score):
     return (score - ref_min_score) / (ref_max_score - ref_min_score)
 
 def qlearning_dataset(env):
-    print(hasattr(env, "ratio"))
     if hasattr(env, "ratio"):
         dataset1, dataset2 = env.get_dataset()
         qlearning_dataset1 = get_qlearning_dataset(dataset1, ratio=10)
