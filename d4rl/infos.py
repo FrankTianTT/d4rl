@@ -94,6 +94,9 @@ DATASET_URLS = {
     'bullet-maze2d-umaze-v0': 'http://rail.eecs.berkeley.edu/datasets/offline_rl/bullet/bullet-maze2d-umaze-sparse.hdf5',
     'bullet-maze2d-medium-v0': 'http://rail.eecs.berkeley.edu/datasets/offline_rl/bullet/bullet-maze2d-medium-sparse.hdf5',
     'bullet-maze2d-large-v0': 'http://rail.eecs.berkeley.edu/datasets/offline_rl/bullet/bullet-maze2d-large-sparse.hdf5',
+    'particle-random-v0': 'https://box.nju.edu.cn/f/f988a549016646928b1a/?dl=1',
+    'particle-medium-v0': 'https://box.nju.edu.cn/f/8352da217e6e4614adfa/?dl=1',
+    'particle-medium-replay-v0': 'https://box.nju.edu.cn/f/af872f1d1ef84d1189a4/?dl=1'
 }
 
 
@@ -179,6 +182,9 @@ REF_MIN_SCORE = {
     'bullet-maze2d-umaze-v0': 32.460000,
     'bullet-maze2d-medium-v0': 14.870000,
     'bullet-maze2d-large-v0': 1.820000,
+    'particle-random-v0': -2.495608,
+    'particle-medium-v0': -2.495608,
+    'particle-medium-replay-v0': -2.495608,
 }
 
 REF_MAX_SCORE = {
@@ -263,6 +269,9 @@ REF_MAX_SCORE = {
     'bullet-maze2d-umaze-v0': 153.99,
     'bullet-maze2d-medium-v0': 238.05,
     'bullet-maze2d-large-v0': 285.92,
+    'particle-random-v0': 114.555886,
+    'particle-medium-v0': 114.555886,
+    'particle-medium-replay-v0': 114.555886,
 }
 
 

@@ -147,5 +147,10 @@ if __name__ == "__main__":
     # ParticleEnv().draw_v_curve()
     #
     # find_v_dist_boundary()
-    for _ in range(100):
-        print(random.normalvariate(0, 1))
+    # for _ in range(100):
+    #     print(random.normalvariate(0, 1))
+
+    import gym
+    env = gym.make("particle-random-v0")
+
+    print(env.ref_max_score)
