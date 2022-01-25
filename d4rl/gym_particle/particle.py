@@ -116,6 +116,11 @@ class OfflineParticleEnv(ParticleEnv, offline_env.OfflineEnv):
         ParticleEnv.__init__(self)
         offline_env.OfflineEnv.__init__(self, **kwargs)
 
+class MixedOfflineParticleEnv(ParticleEnv, offline_env.MixedOfflineEnv):
+    def __init__(self, **kwargs):
+        ParticleEnv.__init__(self)
+        offline_env.MixedOfflineEnv.__init__(self, **kwargs)
+
 
 def find_v_dist_boundary(num=int(2e5), max_episode_steps=100):
     env = TimeLimit(ParticleEnv(), max_episode_steps)
@@ -141,6 +146,10 @@ def find_v_dist_boundary(num=int(2e5), max_episode_steps=100):
 
 def get_particle_env(**kwargs):
     return OfflineParticleEnv(**kwargs)
+
+def get_mixed_particle_env(**kwargs):
+    return MixedOfflineParticleEnv(**kwargs)
+
 
 
 if __name__ == "__main__":
